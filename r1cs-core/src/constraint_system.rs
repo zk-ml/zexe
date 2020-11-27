@@ -217,6 +217,24 @@ impl<F: Field> ConstraintSystem<F> {
         Ok(())
     }
 
+    /// Count the number of times a given LC is used within another LC
+    fn lc_num_times_used(&self, count_sinks: bool) -> Vec<usize> {
+        // step 1: Identify all lcs that have been many times
+        let mut num_times_used = vec![0; self.lc_map.len()];
+
+        for (index, lc) in self.lc_map.iter() {
+            num_times_used[index.0] += count_sinks as usize;
+
+            for &(_, var) in lc.iter() {
+                if var.is_lc() {
+                    let lc_index = var.get_lc_index().expect("should be lc");
+                    num_times_used[lc_index.0] += 1;
+                }
+            }
+        }
+        num_times_used
+    }
+
     /// Naively inlines symbolic linear combinations into the linear combinations
     /// that use them.
     ///
@@ -227,6 +245,8 @@ impl<F: Field> ConstraintSystem<F> {
     /// is the dominating cost.
     pub fn inline_all_lcs(&mut self) {
         let mut inlined_lcs = BTreeMap::new();
+        let mut num_times_used = self.lc_num_times_used(false);
+
         for (&index, lc) in &self.lc_map {
             let mut inlined_lc = LinearCombination::new();
             for &(coeff, var) in lc.iter() {
@@ -236,6 +256,12 @@ impl<F: Field> ConstraintSystem<F> {
                     // inlined LC, and substitute it in.
                     let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
                     inlined_lc.extend((lc * coeff).0.into_iter());
+
+                    num_times_used[lc_index.0] -= 1;
+                    if num_times_used[lc_index.0] == 0 {
+                        // This lc is not used any more, so remove it.
+                        inlined_lcs.remove(&lc_index);
+                    }
                 } else {
                     // Otherwise, it's a concrete variable and so we
                     // substitute it in directly.
