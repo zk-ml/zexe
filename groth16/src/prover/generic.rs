@@ -115,7 +115,7 @@ where
     let b_query = params.get_b_g2_query_full()?;
     let s_g2 = params.vk.delta_g2.mul(s);
     let g2_b = calculate_coeff(s_g2, b_query, params.vk.beta_g2, &assignment);
-
+    drop(assignment);
     end_timer!(b_g2_acc_time);
 
     // Compute C
@@ -123,9 +123,10 @@ where
 
     let h_query = params.get_h_query_full()?;
     let h_acc = VariableBaseMSM::multi_scalar_mul(&h_query, &h_assignment);
-
+    drop(h_assignment);
     let l_aux_source = params.get_l_query_full()?;
     let l_aux_acc = VariableBaseMSM::multi_scalar_mul(l_aux_source, &aux_assignment);
+    drop(aux_assignment);
 
     let s_g_a = g_a.mul(s);
     let r_g1_b = g1_b.mul(r);
