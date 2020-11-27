@@ -69,6 +69,7 @@ where
 
     end_timer!(domain_time);
     ///////////////////////////////////////////////////////////////////////////
+    println!("start R1CS to QAP");
 
     let reduction_time = start_timer!(|| "R1CS to QAP Instance Map with Evaluation");
     let num_instance_variables = cs.num_instance_variables();
