@@ -51,6 +51,7 @@ where
     cs.set_mode(r1cs_core::SynthesisMode::Setup);
 
     // Synthesize the circuit.
+    println!("start synthesize circuit");
     let synthesis_time = start_timer!(|| "Constraint synthesis");
     circuit.generate_constraints(cs.clone())?;
     end_timer!(synthesis_time);
@@ -75,6 +76,7 @@ where
     let (a, b, c, zt, qap_num_variables, m_raw) =
         R1CStoQAP::instance_map_with_evaluation::<E, D>(cs.clone(), &t)?;
     end_timer!(reduction_time);
+    println!("start Compute query densities");
 
     // Compute query densities
     let non_zero_a: usize = cfg_into_iter!(0..qap_num_variables)
@@ -104,6 +106,7 @@ where
     drop(c);
     let g1_generator = E::G1Projective::rand(rng);
     let g2_generator = E::G2Projective::rand(rng);
+    println!("start Compute G window table");
 
     // Compute G window table
     let g1_window_time = start_timer!(|| "Compute G1 window table");
@@ -112,6 +115,7 @@ where
     let g1_table =
         FixedBaseMSM::get_window_table::<E::G1Projective>(scalar_bits, g1_window, g1_generator);
     end_timer!(g1_window_time);
+    println!("start Generate the R1CS proving key");
 
     // Generate the R1CS proving key
     let proving_key_time = start_timer!(|| "Generate the R1CS proving key");
@@ -121,6 +125,7 @@ where
     let beta_g2 = g2_generator.mul(beta);
     let delta_g1 = g1_generator.mul(delta);
     let delta_g2 = g2_generator.mul(delta);
+    println!("start A-query");
 
     // Compute the A-query
     let a_time = start_timer!(|| "Calculate A");
@@ -148,6 +153,7 @@ where
         drop(b);
 
     end_timer!(b_g2_time);
+    println!("start H-query");
 
     // Compute the H-query
     let h_time = start_timer!(|| "Calculate H");
@@ -161,6 +167,7 @@ where
     );
 
     end_timer!(h_time);
+    println!("start L-query");
 
     // Compute the L-query
     let l_time = start_timer!(|| "Calculate L");
@@ -170,6 +177,7 @@ where
     end_timer!(l_time);
     drop(l);
     end_timer!(proving_key_time);
+    println!("start Generate R1CS verification key");
 
     // Generate R1CS verification key
     let verifying_key_time = start_timer!(|| "Generate the R1CS verification key");
