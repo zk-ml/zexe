@@ -54,11 +54,13 @@ where
     println!("start synthesize circuit");
     let synthesis_time = start_timer!(|| "Constraint synthesis");
     circuit.generate_constraints(cs.clone())?;
+    //30GB
     end_timer!(synthesis_time);
     println!("start inline lcs");
 
     let lc_time = start_timer!(|| "Inlining LCs");
-    cs.inline_all_lcs();
+    //cs.inline_all_lcs();
+    //
     end_timer!(lc_time);
     println!("start Constructing evaluation domain");
 
