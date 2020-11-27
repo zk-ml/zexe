@@ -65,7 +65,7 @@ impl R1CStoQAP {
         let mut a = vec![E::Fr::zero(); qap_num_variables + 1];
         let mut b = vec![E::Fr::zero(); qap_num_variables + 1];
         let mut c = vec![E::Fr::zero(); qap_num_variables + 1];
-
+        println!("allocate a,b and c");
         for i in 0..cs.num_instance_variables() {
             a[i] = u[cs.num_constraints() + i];
         }
@@ -79,6 +79,9 @@ impl R1CStoQAP {
             }
             for &(ref coeff, index) in &matrices.c[i] {
                 c[index] += &(u[i] * coeff);
+            }
+            if(i % 100000 == 0){
+                println!("100K constraints processed!");
             }
         }
 
