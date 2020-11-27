@@ -59,7 +59,7 @@ where
     println!("start inline lcs");
 
     let lc_time = start_timer!(|| "Inlining LCs");
-    //cs.inline_all_lcs();
+    cs.inline_all_lcs();
     //
     end_timer!(lc_time);
     println!("start Constructing evaluation domain");
