@@ -70,6 +70,8 @@ where
     ///////////////////////////////////////////////////////////////////////////
 
     let reduction_time = start_timer!(|| "R1CS to QAP Instance Map with Evaluation");
+    let num_instance_variables = cs.num_instance_variables();
+
     let (a, b, c, zt, qap_num_variables, m_raw) =
         R1CStoQAP::instance_map_with_evaluation::<E, D>(cs.clone(), &t)?;
     end_timer!(reduction_time);
@@ -87,7 +89,6 @@ where
 
     let gamma_inverse = gamma.inverse().ok_or(SynthesisError::UnexpectedIdentity)?;
     let delta_inverse = delta.inverse().ok_or(SynthesisError::UnexpectedIdentity)?;
-    let num_instance_variables = cs.num_instance_variables();
 
     let gamma_abc = cfg_iter!(a[..num_instance_variables])
         .zip(&b[..num_instance_variables])
@@ -100,7 +101,7 @@ where
         .zip(&c)
         .map(|((a, b), c)| (beta * a + &(alpha * b) + c) * &delta_inverse)
         .collect::<Vec<_>>();
-
+    drop(c);
     let g1_generator = E::G1Projective::rand(rng);
     let g2_generator = E::G2Projective::rand(rng);
 
@@ -126,13 +127,12 @@ where
     let mut a_query =
         FixedBaseMSM::multi_scalar_mul::<E::G1Projective>(scalar_bits, g1_window, &g1_table, &a);
     end_timer!(a_time);
-
+    drop(a);
     // Compute the B-query in G1
     let b_g1_time = start_timer!(|| "Calculate B G1");
     let mut b_g1_query =
         FixedBaseMSM::multi_scalar_mul::<E::G1Projective>(scalar_bits, g1_window, &g1_table, &b);
     end_timer!(b_g1_time);
-
     // Compute B window table
     let g2_time = start_timer!(|| "Compute G2 table");
     let g2_window = FixedBaseMSM::get_mul_window_size(non_zero_b);
@@ -144,6 +144,9 @@ where
     let b_g2_time = start_timer!(|| "Calculate B G2");
     let mut b_g2_query =
         FixedBaseMSM::multi_scalar_mul::<E::G2Projective>(scalar_bits, g2_window, &g2_table, &b);
+        drop(g2_table);
+        drop(b);
+
     end_timer!(b_g2_time);
 
     // Compute the H-query
@@ -165,7 +168,7 @@ where
         FixedBaseMSM::multi_scalar_mul::<E::G1Projective>(scalar_bits, g1_window, &g1_table, &l);
     let mut l_query = l_query[cs.num_instance_variables()..].to_vec();
     end_timer!(l_time);
-
+    drop(l);
     end_timer!(proving_key_time);
 
     // Generate R1CS verification key
@@ -212,3 +215,4 @@ where
         l_query: l_query.into_iter().map(Into::into).collect(),
     })
 }
+
