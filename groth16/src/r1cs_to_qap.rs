@@ -80,9 +80,9 @@ impl R1CStoQAP {
             for &(ref coeff, index) in &matrices.c[i] {
                 c[index] += &(u[i] * coeff);
             }
-            if(i % 100000 == 0){
-                println!("100K constraints processed!");
-            }
+            // if(i % 100000 == 0){
+            //     println!("100K constraints processed!");
+            // }
         }
 
         Ok((a, b, c, zt, qap_num_variables, domain_size))
