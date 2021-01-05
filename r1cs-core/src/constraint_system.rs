@@ -6,7 +6,8 @@ use crate::{
 };
 use algebra_core::Field;
 use core::cell::{Ref, RefCell, RefMut};
-
+use std::time::Instant;
+use core::time::Duration;
 /// Computations are expressed in terms of rank-1 constraint systems (R1CS).
 /// The `generate_constraints` method is called to generate constraints for
 /// both CRS generation and for proving.
@@ -247,6 +248,11 @@ impl<F: Field> ConstraintSystem<F> {
         let mut inlined_lcs = BTreeMap::new();
         let mut num_times_used = self.lc_num_times_used(false);
 
+        let  mut remove_time = Duration::from_secs(0);
+        let  mut compactify_time = Duration::from_secs(0);
+        let  mut insert_time = Duration::from_secs(0);
+        let  mut extend_time = Duration::from_secs(0);
+
         for (&index, lc) in &self.lc_map {
             let mut inlined_lc = LinearCombination::new();
             for &(coeff, var) in lc.iter() {
@@ -255,12 +261,20 @@ impl<F: Field> ConstraintSystem<F> {
                     // If `var` is a `SymbolicLc`, fetch the corresponding
                     // inlined LC, and substitute it in.
                     let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
+                    let begin = Instant::now();
                     inlined_lc.extend((lc * coeff).0.into_iter());
+                    let end = Instant::now();
+                    extend_time += end.duration_since(begin);
 
                     num_times_used[lc_index.0] -= 1;
                     if num_times_used[lc_index.0] == 0 {
                         // This lc is not used any more, so remove it.
+                        let begin = Instant::now();
+
                         inlined_lcs.remove(&lc_index);
+                        let end = Instant::now();
+                        remove_time += end.duration_since(begin);
+
                     }
                 } else {
                     // Otherwise, it's a concrete variable and so we
@@ -268,9 +282,18 @@ impl<F: Field> ConstraintSystem<F> {
                     inlined_lc.push((coeff, var));
                 }
             }
+            let begin = Instant::now();
             inlined_lc.compactify();
+            let end = Instant::now();
+            compactify_time += end.duration_since(begin);
+
+            let begin = Instant::now();
             inlined_lcs.insert(index, inlined_lc);
+            let end = Instant::now();
+            insert_time += end.duration_since(begin);
         }
+        println!("remove {}\nextend {}\n compactify {}\n insert {}\n", remove_time, extend_time, compactify_time, insert_time);
+
         self.lc_map = inlined_lcs;
     }
 

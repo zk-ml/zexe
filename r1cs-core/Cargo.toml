@@ -23,6 +23,8 @@ edition = "2018"
 algebra-core = { path = "../algebra-core", default-features = false }
 tracing = { version = "0.1", default-features = false, optional = true }
 tracing-subscriber = { version = "0.2", default-features = false, optional = true }
+threadpool = "1.0"
+
 
 [dev-dependencies]
 algebra = { path = "../algebra", default-features = false, features = [ "bls12_381" ] }
