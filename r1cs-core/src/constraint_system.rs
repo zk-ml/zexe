@@ -292,7 +292,7 @@ impl<F: Field> ConstraintSystem<F> {
             let end = Instant::now();
             insert_time += end.duration_since(begin);
         }
-        println!("remove {}\nextend {}\n compactify {}\n insert {}\n", remove_time, extend_time, compactify_time, insert_time);
+        println!("remove {:?}\nextend {:?}\n compactify {:?}\n insert {:?}\n", remove_time, extend_time, compactify_time, insert_time);
 
         self.lc_map = inlined_lcs;
     }
