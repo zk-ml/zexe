@@ -51,7 +51,7 @@ where
     cs.set_mode(r1cs_core::SynthesisMode::Setup);
 
     // Synthesize the circuit.
-    println!("start synthesize circuit");
+    //println!("start synthesize circuit");
     let synthesis_time = start_timer!(|| "Constraint synthesis");
     circuit.generate_constraints(cs.clone())?;
     //30GB
@@ -62,7 +62,9 @@ where
     cs.inline_all_lcs();
     //
     end_timer!(lc_time);
-    println!("start Constructing evaluation domain");
+    println!("finish inline lcs");
+
+    //println!("start Constructing evaluation domain");
 
     ///////////////////////////////////////////////////////////////////////////
     let domain_time = start_timer!(|| "Constructing evaluation domain");
@@ -73,7 +75,7 @@ where
 
     end_timer!(domain_time);
     ///////////////////////////////////////////////////////////////////////////
-    println!("start R1CS to QAP");
+    //println!("start R1CS to QAP");
 
     let reduction_time = start_timer!(|| "R1CS to QAP Instance Map with Evaluation");
     let num_instance_variables = cs.num_instance_variables();
@@ -81,7 +83,7 @@ where
     let (a, b, c, zt, qap_num_variables, m_raw) =
         R1CStoQAP::instance_map_with_evaluation::<E, D>(cs.clone(), &t)?;
     end_timer!(reduction_time);
-    println!("start Compute query densities");
+    //println!("start Compute query densities");
 
     // Compute query densities
     let non_zero_a: usize = cfg_into_iter!(0..qap_num_variables)
@@ -111,7 +113,7 @@ where
     drop(c);
     let g1_generator = E::G1Projective::rand(rng);
     let g2_generator = E::G2Projective::rand(rng);
-    println!("start Compute G window table");
+    //println!("start Compute G window table");
 
     // Compute G window table
     let g1_window_time = start_timer!(|| "Compute G1 window table");
@@ -120,7 +122,7 @@ where
     let g1_table =
         FixedBaseMSM::get_window_table::<E::G1Projective>(scalar_bits, g1_window, g1_generator);
     end_timer!(g1_window_time);
-    println!("start Generate the R1CS proving key");
+    //println!("start Generate the R1CS proving key");
 
     // Generate the R1CS proving key
     let proving_key_time = start_timer!(|| "Generate the R1CS proving key");
@@ -130,7 +132,7 @@ where
     let beta_g2 = g2_generator.mul(beta);
     let delta_g1 = g1_generator.mul(delta);
     let delta_g2 = g2_generator.mul(delta);
-    println!("start A-query");
+   // println!("start A-query");
 
     // Compute the A-query
     let a_time = start_timer!(|| "Calculate A");
@@ -158,7 +160,7 @@ where
         drop(b);
 
     end_timer!(b_g2_time);
-    println!("start H-query");
+    //println!("start H-query");
 
     // Compute the H-query
     let h_time = start_timer!(|| "Calculate H");
@@ -172,7 +174,7 @@ where
     );
 
     end_timer!(h_time);
-    println!("start L-query");
+    //println!("start L-query");
 
     // Compute the L-query
     let l_time = start_timer!(|| "Calculate L");
@@ -182,7 +184,7 @@ where
     end_timer!(l_time);
     drop(l);
     end_timer!(proving_key_time);
-    println!("start Generate R1CS verification key");
+    //println!("start Generate R1CS verification key");
 
     // Generate R1CS verification key
     let verifying_key_time = start_timer!(|| "Generate the R1CS verification key");
