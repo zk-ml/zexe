@@ -252,7 +252,7 @@ impl<F: Field> ConstraintSystem<F> {
         let  mut compactify_time = Duration::from_secs(0);
         let  mut insert_time = Duration::from_secs(0);
         let  mut extend_time = Duration::from_secs(0);
-
+        let mut lc_mul_coeff_time = Duration::from_secs(0);
         for (&index, lc) in &self.lc_map {
             let mut inlined_lc = LinearCombination::new();
             for &(coeff, var) in lc.iter() {
@@ -262,7 +262,13 @@ impl<F: Field> ConstraintSystem<F> {
                     // inlined LC, and substitute it in.
                     let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
                     let begin = Instant::now();
-                    inlined_lc.extend((lc * coeff).0.into_iter());
+                    let tmp = (lc * coeff).0.into_iter();
+                    let end = Instant::now();
+                    lc_mul_coeff_time += end.duration_since(begin);
+
+
+                    let begin = Instant::now();
+                    inlined_lc.extend(tmp);
                     let end = Instant::now();
                     extend_time += end.duration_since(begin);
 
@@ -292,7 +298,7 @@ impl<F: Field> ConstraintSystem<F> {
             let end = Instant::now();
             insert_time += end.duration_since(begin);
         }
-        println!("remove {:?}\nextend {:?}\n compactify {:?}\n insert {:?}\n", remove_time, extend_time, compactify_time, insert_time);
+        println!("remove {:?}\nextend {:?}\n compactify {:?}\n insert {:?}\nlc_mul_coeff_time {:?}\n", remove_time, extend_time, compactify_time, insert_time, lc_mul_coeff_time);
 
         self.lc_map = inlined_lcs;
     }
