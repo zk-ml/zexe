@@ -256,7 +256,7 @@ impl<F: Field> ConstraintSystem<F> {
         println!("lc_map len {}",self.lc_map.len());
         for (&index, lc) in &self.lc_map {
             let mut inlined_lc = LinearCombination::new();
-            println!("lc len {}", lc.clone().len());
+            //println!("lc len {}", lc.clone().len());
             for &(coeff, var) in lc.iter() {
                 if var.is_lc() {
                     let lc_index = var.get_lc_index().expect("should be lc");
