@@ -305,7 +305,7 @@ impl<F: Field> ConstraintSystem<F> {
             insert_time += end.duration_since(begin);
         }
         println!("num coeffs: {:?}", num_coeff);
-        println!("remove {:?}\nextend {:?}\n compactify {:?}\n insert {:?}\nlc_mul_coeff_time {:?}\n", remove_time, extend_time, compactify_time, insert_time, lc_mul_coeff_time);
+        //println!("remove {:?}\nextend {:?}\n compactify {:?}\n insert {:?}\nlc_mul_coeff_time {:?}\n", remove_time, extend_time, compactify_time, insert_time, lc_mul_coeff_time);
 
         self.lc_map = inlined_lcs;
     }
