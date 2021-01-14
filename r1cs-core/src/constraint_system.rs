@@ -253,14 +253,18 @@ impl<F: Field> ConstraintSystem<F> {
         let  mut insert_time = Duration::from_secs(0);
         let  mut extend_time = Duration::from_secs(0);
         let mut lc_mul_coeff_time = Duration::from_secs(0);
+        println!("lc_map len {}",self.lc_map.len());
         for (&index, lc) in &self.lc_map {
             let mut inlined_lc = LinearCombination::new();
+            println!("lc len {}", lc.clone().len());
             for &(coeff, var) in lc.iter() {
                 if var.is_lc() {
                     let lc_index = var.get_lc_index().expect("should be lc");
                     // If `var` is a `SymbolicLc`, fetch the corresponding
                     // inlined LC, and substitute it in.
                     let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
+                    
+                    
                     let begin = Instant::now();
                     let tmp = (lc * coeff).0.into_iter();
                     let end = Instant::now();

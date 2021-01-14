@@ -60,6 +60,7 @@ where
     cs.inline_all_lcs();
     end_timer!(lc_time);
 
+    //TODO
     let num_inputs = cs.num_instance_variables();
     let num_constraints = cs.num_constraints();
 

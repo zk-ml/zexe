@@ -66,7 +66,8 @@ where
     let lc_time = start_timer!(|| "Inlining LCs");
     cs.inline_all_lcs();
     end_timer!(lc_time);
-
+    //TODO
+    
     let witness_map_time = start_timer!(|| "R1CS to QAP witness map");
     let h = R1CStoQAP::witness_map::<E, D>(cs.clone())?;
     end_timer!(witness_map_time);
