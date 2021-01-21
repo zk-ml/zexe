@@ -6,8 +6,8 @@ use crate::{
 };
 use algebra_core::Field;
 use core::cell::{Ref, RefCell, RefMut};
-use std::time::Instant;
 use core::time::Duration;
+use std::time::Instant;
 /// Computations are expressed in terms of rank-1 constraint systems (R1CS).
 /// The `generate_constraints` method is called to generate constraints for
 /// both CRS generation and for proving.
@@ -248,14 +248,14 @@ impl<F: Field> ConstraintSystem<F> {
         let mut inlined_lcs = BTreeMap::new();
         let mut num_times_used = self.lc_num_times_used(false);
 
-        let  mut remove_time = Duration::from_secs(0);
-        let  mut compactify_time = Duration::from_secs(0);
-        let  mut insert_time = Duration::from_secs(0);
-        let  mut extend_time = Duration::from_secs(0);
+        let mut remove_time = Duration::from_secs(0);
+        let mut compactify_time = Duration::from_secs(0);
+        let mut insert_time = Duration::from_secs(0);
+        let mut extend_time = Duration::from_secs(0);
         let mut lc_mul_coeff_time = Duration::from_secs(0);
         let mut num_coeff = 0;
         let mut num_lcs = 0;
-        println!("lc_map len {}",self.lc_map.len());
+        println!("lc_map len {}", self.lc_map.len());
         for (&index, lc) in &self.lc_map {
             let mut inlined_lc = LinearCombination::new();
             num_coeff += lc.clone().len();
@@ -267,13 +267,11 @@ impl<F: Field> ConstraintSystem<F> {
                     // If `var` is a `SymbolicLc`, fetch the corresponding
                     // inlined LC, and substitute it in.
                     let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
-                    
-                    
+
                     let begin = Instant::now();
                     let tmp = (lc * coeff).0.into_iter();
                     let end = Instant::now();
                     lc_mul_coeff_time += end.duration_since(begin);
-
 
                     let begin = Instant::now();
                     inlined_lc.extend(tmp);
@@ -288,7 +286,6 @@ impl<F: Field> ConstraintSystem<F> {
                         inlined_lcs.remove(&lc_index);
                         let end = Instant::now();
                         remove_time += end.duration_since(begin);
-
                     }
                 } else {
                     // Otherwise, it's a concrete variable and so we
@@ -306,8 +303,11 @@ impl<F: Field> ConstraintSystem<F> {
             let end = Instant::now();
             insert_time += end.duration_since(begin);
         }
-        println!("num coeffs: {:?} num lcs: {:?}", num_coeff, num_lcs);
-        //println!("remove {:?}\nextend {:?}\n compactify {:?}\n insert {:?}\nlc_mul_coeff_time {:?}\n", remove_time, extend_time, compactify_time, insert_time, lc_mul_coeff_time);
+        println!(" num lcs: {:?}", num_lcs);
+        println!(
+            "remove {:?} extend {:?}  compactify {:?}   insert {:?} lc_mul_coeff_time {:?}\n",
+            remove_time, extend_time, compactify_time, insert_time, lc_mul_coeff_time
+        );
 
         self.lc_map = inlined_lcs;
     }
