@@ -132,7 +132,7 @@ where
     let beta_g2 = g2_generator.mul(beta);
     let delta_g1 = g1_generator.mul(delta);
     let delta_g2 = g2_generator.mul(delta);
-   // println!("start A-query");
+    // println!("start A-query");
 
     // Compute the A-query
     let a_time = start_timer!(|| "Calculate A");
@@ -156,8 +156,8 @@ where
     let b_g2_time = start_timer!(|| "Calculate B G2");
     let mut b_g2_query =
         FixedBaseMSM::multi_scalar_mul::<E::G2Projective>(scalar_bits, g2_window, &g2_table, &b);
-        drop(g2_table);
-        drop(b);
+    drop(g2_table);
+    drop(b);
 
     end_timer!(b_g2_time);
     //println!("start H-query");
@@ -230,4 +230,3 @@ where
         l_query: l_query.into_iter().map(Into::into).collect(),
     })
 }
-
