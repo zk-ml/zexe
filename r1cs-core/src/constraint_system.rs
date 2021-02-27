@@ -292,7 +292,7 @@ impl<F: Field> ConstraintSystem<F> {
                     // Otherwise, it's a concrete variable and so we
                     // substitute it in directly.
                     inlined_lc.push((coeff, var));
-                    num_concrete_variable +=1;
+                    num_concrete_variable += 1;
                 }
             }
             let begin = Instant::now();
@@ -305,7 +305,10 @@ impl<F: Field> ConstraintSystem<F> {
             let end = Instant::now();
             insert_time += end.duration_since(begin);
         }
-        println!(" num lcs: {:?}   num_concrete_var: {:?}", num_lcs, num_concrete_variable);
+        println!(
+            " num lcs: {:?}   num_concrete_var: {:?}",
+            num_lcs, num_concrete_variable
+        );
         println!(
             "remove {:?} extend {:?}  compactify {:?}   insert {:?} lc_mul_coeff_time {:?}\n",
             remove_time, extend_time, compactify_time, insert_time, lc_mul_coeff_time
