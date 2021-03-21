@@ -65,7 +65,7 @@ pub trait EvaluationDomain<F: FftField>:
         self.fft_in_place(&mut coeffs);
         coeffs
     }
-
+    //TODO use GPU accelration here
     /// Compute a FFT, modifying the vector in place.
     fn fft_in_place<T: DomainCoeff<F>>(&self, coeffs: &mut Vec<T>);
 
@@ -88,6 +88,7 @@ pub trait EvaluationDomain<F: FftField>:
             pow *= &g
         })
     }
+    //TODO use GPU accelration here
 
     /// Compute a FFT over a coset of the domain.
     #[inline]

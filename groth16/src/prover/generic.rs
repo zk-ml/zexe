@@ -68,10 +68,13 @@ where
     end_timer!(lc_time);
 
     let witness_map_time = start_timer!(|| "R1CS to QAP witness map");
+    //TODO this witness_map function has fft that could be accelerated
     let h = R1CStoQAP::witness_map::<E, D>(cs.clone())?;
     end_timer!(witness_map_time);
     let prover = cs.borrow().unwrap();
 
+
+    //TODO we may need to use Arc() thread-safe data structure to store the assignments for later GPU computation.
     let input_assignment = prover.instance_assignment[1..]
         .into_iter()
         .map(|s| s.into_repr())
@@ -128,6 +131,9 @@ where
     let l_aux_acc = VariableBaseMSM::multi_scalar_mul(l_aux_source, &aux_assignment);
     drop(aux_assignment);
 
+
+
+    //final stage where no GPU acceleration is needed.
     let s_g_a = g_a.mul(s);
     let r_g1_b = g1_b.mul(r);
     let r_s_delta_g1 = params.delta_g1.into_projective().mul(r).mul(s);
@@ -138,7 +144,7 @@ where
     g_c += &l_aux_acc;
     g_c += &h_acc;
     end_timer!(c_acc_time);
-
+    println!("a {:?} b1 {:?} b2{:?} c {:?}", a_acc_time, b_g1_acc_time, b_g2_acc_time, c_acc_time);
     end_timer!(prover_time);
 
     Ok(Proof {
@@ -156,7 +162,7 @@ fn calculate_coeff<G: AffineCurve>(
 ) -> G::Projective {
     let el = query[0];
     let acc = VariableBaseMSM::multi_scalar_mul(&query[1..], assignment);
-
+    //TODO it seems that this function can not be accelerated by GPU multiexp and fft
     let mut res = initial;
     res.add_assign_mixed(&el);
     res += &acc;
