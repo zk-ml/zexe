@@ -24,7 +24,7 @@ edition = "2018"
 
 [dependencies]
 algebra-core = { path = "../algebra-core", default-features = false, features = [ "derive" ] }
-bench-utils = { path = "../bench-utils" }
+bench-utils = { path = "../bench-utils" , features = [ "print-trace"]}
 ff-fft = { path = "../ff-fft", default-features = false }
 r1cs-core = { path = "../r1cs-core", default-features = false }
 rand = { version = "0.7", default-features = false }

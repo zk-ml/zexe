@@ -145,7 +145,6 @@ where
     g_c += &l_aux_acc;
     g_c += &h_acc;
     end_timer!(c_acc_time);
-    println!("a {:?} b1 {:?} b2{:?} c {:?}", a_acc_time, b_g1_acc_time, b_g2_acc_time, c_acc_time);
     end_timer!(prover_time);
 
     Ok(Proof {
