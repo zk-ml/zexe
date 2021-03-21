@@ -99,19 +99,20 @@ where
     end_timer!(a_acc_time);
 
     // Compute B in G1 if needed
+    let b_g1_acc_time = start_timer!(|| "Compute B in G1");
+
     let g1_b = if r != E::Fr::zero() {
-        let b_g1_acc_time = start_timer!(|| "Compute B in G1");
         let s_g1 = params.delta_g1.mul(s);
         let b_query = params.get_b_g1_query_full()?;
 
         let g1_b = calculate_coeff(s_g1, b_query, params.beta_g1, &assignment);
 
-        end_timer!(b_g1_acc_time);
 
         g1_b
     } else {
         E::G1Projective::zero()
     };
+    end_timer!(b_g1_acc_time);
 
     // Compute B in G2
     let b_g2_acc_time = start_timer!(|| "Compute B in G2");
