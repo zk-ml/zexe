@@ -6,7 +6,7 @@ use crate::{
 };
 use algebra_core::Field;
 use core::cell::{Ref, RefCell, RefMut};
-
+use systemstat::*;
 /// Computations are expressed in terms of rank-1 constraint systems (R1CS).
 /// The `generate_constraints` method is called to generate constraints for
 /// both CRS generation and for proving.
@@ -250,19 +250,45 @@ impl<F: Field> ConstraintSystem<F> {
         let mut inlined_lcs = BTreeMap::new();
         let (mut num_times_used, inDegree) = self.lc_num_times_used(false);
         //println!("num times used {:?}", num_times_used.clone());
-        let mut num_coeff = 0;
-        let mut num_lcs = 0;
-        let mut num_concrete_variable = 0;
-        let mut distributions = vec![0; 1000];
+        //TODO a concurrent queue to store LCs to be inlined in topological order.
+        //TODO a worker abstraction to pull LCs from queue 
         println!("before inlining, lc_map len {}", self.lc_map.len());
+        /*
+        TODO remove current lc from self.lc_map to save more memory space? but the rust compiler will stop this action i guess.
+        */
+        // let map_len = self.lc_map.len();
+        // for i in 0..map_len{
+        //     let index = LcIndex(i);
+        //     let lc : LinearCombination<F>= self.lc_map.remove(&index).unwrap();
+        //     let mut inlined_lc = LinearCombination::new();
+        //     for &(coeff, var) in lc.iter() {
+        //         if var.is_lc() {
+        //             let lc_index = var.get_lc_index().expect("should be lc");
+        //             // If `var` is a `SymbolicLc`, fetch the corresponding
+        //             // inlined LC, and substitute it in.
+        //             let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
+        //             let tmp = (lc * coeff).0.into_iter();
+        //             inlined_lc.extend(tmp);
+        //             num_times_used[lc_index.0] -= 1;
+        //             if num_times_used[lc_index.0] == 0 {
+        //                 // This lc is not used any more, so remove it.
+        //                 inlined_lcs.remove(&lc_index);
+        //             }
+        //         } else {
+        //             // Otherwise, it's a concrete variable and so we
+        //             // substitute it in directly.
+        //             inlined_lc.push((coeff, var));
+        //         }
+        //     } 
+        //     inlined_lc.compactify();
+        //     inlined_lcs.insert(index, inlined_lc);
+        // }
+        
+        
         for (&index, lc) in &self.lc_map {
             let mut inlined_lc = LinearCombination::new();
-            num_coeff += lc.clone().len();
-            //println!("lc len {}", lc.clone().len());
-            distributions[lc.clone().len()] += 1;
             for &(coeff, var) in lc.iter() {
                 if var.is_lc() {
-                    num_lcs += 1;
                     let lc_index = var.get_lc_index().expect("should be lc");
                     // If `var` is a `SymbolicLc`, fetch the corresponding
                     // inlined LC, and substitute it in.
@@ -278,19 +304,16 @@ impl<F: Field> ConstraintSystem<F> {
                     // Otherwise, it's a concrete variable and so we
                     // substitute it in directly.
                     inlined_lc.push((coeff, var));
-                    num_concrete_variable += 1;
                 }
             }
             inlined_lc.compactify();
             inlined_lcs.insert(index, inlined_lc);
-
         }
-        println!("distributions {:?}", distributions);
-        println!(
-            " num lcs: {:?}   num_concrete_var: {:?}",
-            num_lcs, num_concrete_variable
-        );
-
+        let sys = System::new();
+        match sys.memory() {
+            Ok(mem) => println!("\nMemory: {} used / {} ({} bytes) total ({:?})", saturating_sub_bytes(mem.total, mem.free), mem.total, mem.total.as_u64(), mem.platform_memory),
+            Err(x) => println!("\nMemory: error: {}", x)
+        }
         self.lc_map = inlined_lcs;
         println!("after inlining lcs, lcs map len is {}", self.lc_map.len());
 
