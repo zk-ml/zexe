@@ -256,36 +256,10 @@ impl<F: Field> ConstraintSystem<F> {
         /*
         TODO remove current lc from self.lc_map to save more memory space? but the rust compiler will stop this action i guess.
         */
-        // let map_len = self.lc_map.len();
-        // for i in 0..map_len{
-        //     let index = LcIndex(i);
-        //     let lc : LinearCombination<F>= self.lc_map.remove(&index).unwrap();
-        //     let mut inlined_lc = LinearCombination::new();
-        //     for &(coeff, var) in lc.iter() {
-        //         if var.is_lc() {
-        //             let lc_index = var.get_lc_index().expect("should be lc");
-        //             // If `var` is a `SymbolicLc`, fetch the corresponding
-        //             // inlined LC, and substitute it in.
-        //             let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
-        //             let tmp = (lc * coeff).0.into_iter();
-        //             inlined_lc.extend(tmp);
-        //             num_times_used[lc_index.0] -= 1;
-        //             if num_times_used[lc_index.0] == 0 {
-        //                 // This lc is not used any more, so remove it.
-        //                 inlined_lcs.remove(&lc_index);
-        //             }
-        //         } else {
-        //             // Otherwise, it's a concrete variable and so we
-        //             // substitute it in directly.
-        //             inlined_lc.push((coeff, var));
-        //         }
-        //     } 
-        //     inlined_lc.compactify();
-        //     inlined_lcs.insert(index, inlined_lc);
-        // }
-        
-        
-        for (&index, lc) in &self.lc_map {
+        let map_len = self.lc_map.len();
+        for i in 0..map_len{
+            let index = LcIndex(i);
+            let lc : LinearCombination<F>= self.lc_map.remove(&index).unwrap();
             let mut inlined_lc = LinearCombination::new();
             for &(coeff, var) in lc.iter() {
                 if var.is_lc() {
@@ -305,10 +279,37 @@ impl<F: Field> ConstraintSystem<F> {
                     // substitute it in directly.
                     inlined_lc.push((coeff, var));
                 }
-            }
+            } 
             inlined_lc.compactify();
             inlined_lcs.insert(index, inlined_lc);
         }
+        
+        
+        // for (&index, lc) in &self.lc_map {
+        //     let mut inlined_lc = LinearCombination::new();
+        //     for &(coeff, var) in lc.iter() {
+        //         if var.is_lc() {
+        //             let lc_index = var.get_lc_index().expect("should be lc");
+        //             // If `var` is a `SymbolicLc`, fetch the corresponding
+        //             // inlined LC, and substitute it in.
+        //             let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
+        //             let tmp = (lc * coeff).0.into_iter();
+        //             inlined_lc.extend(tmp);
+        //             num_times_used[lc_index.0] -= 1;
+        //             if num_times_used[lc_index.0] == 0 {
+        //                 // This lc is not used any more, so remove it.
+        //                 inlined_lcs.remove(&lc_index);
+        //             }
+        //         } else {
+        //             // Otherwise, it's a concrete variable and so we
+        //             // substitute it in directly.
+        //             inlined_lc.push((coeff, var));
+        //         }
+        //     }
+        //     inlined_lc.compactify();
+        //     inlined_lcs.insert(index, inlined_lc);
+        // }
+
         let sys = System::new();
         match sys.memory() {
             Ok(mem) => println!("\nMemory: {} used / {} ({} bytes) total ({:?})", saturating_sub_bytes(mem.total, mem.free), mem.total, mem.total.as_u64(), mem.platform_memory),
