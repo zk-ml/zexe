@@ -10,7 +10,7 @@ use crate::{r1cs_to_qap::R1CStoQAP, Parameters, Proof, Vec};
 use r1cs_core::{ConstraintSynthesizer, ConstraintSystem, SynthesisError};
 
 use ff_fft::{cfg_into_iter, cfg_iter, EvaluationDomain};
-
+use systemstat::*;
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
@@ -54,6 +54,7 @@ where
     C: ConstraintSynthesizer<E::Fr>,
     D: EvaluationDomain<E::Fr>,
 {
+    let sys = System::new();
     let prover_time = start_timer!(|| "Groth16::Prover");
     let cs = ConstraintSystem::new_ref();
 
@@ -62,11 +63,17 @@ where
     circuit.generate_constraints(cs.clone())?;
     debug_assert!(cs.is_satisfied().unwrap());
     end_timer!(synthesis_time);
-
+    match sys.memory() {
+        Ok(mem) => println!("\nproving contraint synthesis Memory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
+        Err(x) => println!("\nMemory: error: {}", x)
+    }
     let lc_time = start_timer!(|| "Inlining LCs");
     cs.inline_all_lcs();
     end_timer!(lc_time);
-
+    match sys.memory() {
+        Ok(mem) => println!("\nproving inline all lcs Memory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
+        Err(x) => println!("\nMemory: error: {}", x)
+    }
     let witness_map_time = start_timer!(|| "R1CS to QAP witness map");
     //TODO this witness_map function has fft that could be accelerated
     let h = R1CStoQAP::witness_map::<E, D>(cs.clone())?;
@@ -146,7 +153,10 @@ where
     g_c += &h_acc;
     end_timer!(c_acc_time);
     end_timer!(prover_time);
-
+    match sys.memory() {
+        Ok(mem) => println!("\nproving compute ABC in G1 and G2 Memory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
+        Err(x) => println!("\nMemory: error: {}", x)
+    }
     Ok(Proof {
         a: g_a.into_affine(),
         b: g2_b.into_affine(),

@@ -312,7 +312,7 @@ impl<F: Field> ConstraintSystem<F> {
 
         let sys = System::new();
         match sys.memory() {
-            Ok(mem) => println!("\nMemory: {} used / {} ({} bytes) total ({:?})", saturating_sub_bytes(mem.total, mem.free), mem.total, mem.total.as_u64(), mem.platform_memory),
+            Ok(mem) => println!("\nMemory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
             Err(x) => println!("\nMemory: error: {}", x)
         }
         self.lc_map = inlined_lcs;
