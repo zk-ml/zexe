@@ -61,7 +61,7 @@ where
     // Synthesize the circuit.
     let synthesis_time = start_timer!(|| "Constraint synthesis");
     circuit.generate_constraints(cs.clone())?;
-    debug_assert!(cs.is_satisfied().unwrap());
+    //debug_assert!(cs.is_satisfied().unwrap());
     end_timer!(synthesis_time);
     match sys.memory() {
         Ok(mem) => println!("\nproving contraint synthesis Memory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),

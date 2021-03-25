@@ -60,7 +60,6 @@ where
         Ok(mem) => println!("\ngen_para Constraint synthesis Memory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
         Err(x) => println!("\nMemory: error: {}", x)
     }
-    //30GB
     end_timer!(synthesis_time);
 
     let lc_time = start_timer!(|| "Inlining LCs");
