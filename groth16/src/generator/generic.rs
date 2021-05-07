@@ -10,7 +10,7 @@ use rand::Rng;
 use rayon::prelude::*;
 
 use crate::{r1cs_to_qap::R1CStoQAP, Parameters, Vec, VerifyingKey};
-
+use systemstat::*;
 /// Generates a random common reference string for
 /// a circuit.
 pub fn generate_random_parameters<E, C, D, R>(
@@ -46,6 +46,8 @@ where
     D: EvaluationDomain<E::Fr>,
     R: Rng,
 {
+    let sys = System::new();
+
     let setup_time = start_timer!(|| "Groth16::Generator");
     let cs = ConstraintSystem::new_ref();
     cs.set_mode(r1cs_core::SynthesisMode::Setup);
@@ -54,15 +56,20 @@ where
     //println!("start synthesize circuit");
     let synthesis_time = start_timer!(|| "Constraint synthesis");
     circuit.generate_constraints(cs.clone())?;
-    //30GB
+    match sys.memory() {
+        Ok(mem) => println!("\ngen_para Constraint synthesis Memory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
+        Err(x) => println!("\nMemory: error: {}", x)
+    }
     end_timer!(synthesis_time);
-    println!("start inline lcs");
 
     let lc_time = start_timer!(|| "Inlining LCs");
     cs.inline_all_lcs();
     //
     end_timer!(lc_time);
-    println!("finish inline lcs");
+    match sys.memory() {
+        Ok(mem) => println!("\ngen_para inline lcs Memory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
+        Err(x) => println!("\nMemory: error: {}", x)
+    }
 
     //println!("start Constructing evaluation domain");
 
@@ -83,6 +90,10 @@ where
     let (a, b, c, zt, qap_num_variables, m_raw) =
         R1CStoQAP::instance_map_with_evaluation::<E, D>(cs.clone(), &t)?;
     end_timer!(reduction_time);
+    match sys.memory() {
+        Ok(mem) => println!("\ngen_para R1CS to QAP Memory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
+        Err(x) => println!("\nMemory: error: {}", x)
+    }
     //println!("start Compute query densities");
 
     // Compute query densities
@@ -218,7 +229,10 @@ where
     E::G1Projective::batch_normalization(l_query.as_mut_slice());
     end_timer!(batch_normalization_time);
     end_timer!(setup_time);
-
+    match sys.memory() {
+        Ok(mem) => println!("\ngen_para Compute ABC in G1 and G2 Memory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
+        Err(x) => println!("\nMemory: error: {}", x)
+    }
     Ok(Parameters {
         vk,
         beta_g1: beta_g1.into_affine(),

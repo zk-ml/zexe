@@ -87,6 +87,8 @@ impl R1CStoQAP {
 
         Ok((a, b, c, zt, qap_num_variables, domain_size))
     }
+    
+    //TODO this witness_map function has fft that could be accelerated
 
     #[inline]
     pub(crate) fn witness_map<E: PairingEngine, D: EvaluationDomain<E::Fr>>(
@@ -124,7 +126,8 @@ impl R1CStoQAP {
         for i in 0..num_inputs {
             a[num_constraints + i] = full_assignment[i];
         }
-
+        //TODO this should be accelarated by GPU fft.
+        println!("R1CS to QAP starts fft here\n");
         domain.ifft_in_place(&mut a);
         domain.ifft_in_place(&mut b);
 
@@ -144,6 +147,7 @@ impl R1CStoQAP {
 
         domain.ifft_in_place(&mut c);
         domain.coset_fft_in_place(&mut c);
+        println!("R1CS to QAP ends fft here\n");
 
         cfg_iter_mut!(ab)
             .zip(c)

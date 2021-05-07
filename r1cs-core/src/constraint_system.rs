@@ -6,8 +6,7 @@ use crate::{
 };
 use algebra_core::Field;
 use core::cell::{Ref, RefCell, RefMut};
-use core::time::Duration;
-use std::time::Instant;
+//use systemstat::*;
 /// Computations are expressed in terms of rank-1 constraint systems (R1CS).
 /// The `generate_constraints` method is called to generate constraints for
 /// both CRS generation and for proving.
@@ -246,9 +245,11 @@ impl<F: Field> ConstraintSystem<F> {
     }
 
     /// Count the number of times a given LC is used within another LC
-    fn lc_num_times_used(&self, count_sinks: bool) -> Vec<usize> {
+    /// return the inDegree of each LC too.
+    fn lc_num_times_used(&self, count_sinks: bool) -> (Vec<usize>, Vec<usize>) {
         // step 1: Identify all lcs that have been many times
         let mut num_times_used = vec![0; self.lc_map.len()];
+        let mut inDegree = vec![0; self.lc_map.len()];
 
         for (index, lc) in self.lc_map.iter() {
             num_times_used[index.0] += count_sinks as usize;
@@ -257,10 +258,11 @@ impl<F: Field> ConstraintSystem<F> {
                 if var.is_lc() {
                     let lc_index = var.get_lc_index().expect("should be lc");
                     num_times_used[lc_index.0] += 1;
+                    inDegree[index.0] += 1;
                 }
             }
         }
-        num_times_used
+        (num_times_used, inDegree)
     }
 
     /// Naively inlines symbolic linear combinations into the linear combinations
@@ -274,75 +276,77 @@ impl<F: Field> ConstraintSystem<F> {
     pub fn inline_all_lcs(&mut self) {
         println!("do nothing here");
         // let mut inlined_lcs = BTreeMap::new();
-        // let mut num_times_used = self.lc_num_times_used(false);
-
-        // let mut remove_time = Duration::from_secs(0);
-        // let mut compactify_time = Duration::from_secs(0);
-        // let mut insert_time = Duration::from_secs(0);
-        // let mut extend_time = Duration::from_secs(0);
-        // let mut lc_mul_coeff_time = Duration::from_secs(0);
-        // let mut num_coeff = 0;
-        // let mut num_lcs = 0;
-        // let mut num_concrete_variable = 0;
-        // println!("lc_map len {}", self.lc_map.len());
-        // for (&index, lc) in &self.lc_map {
+        // let (mut num_times_used, inDegree) = self.lc_num_times_used(false);
+        // //println!("num times used {:?}", num_times_used.clone());
+        // //TODO a concurrent queue to store LCs to be inlined in topological order.
+        // //TODO a worker abstraction to pull LCs from queue 
+        // println!("before inlining, lc_map len {}", self.lc_map.len());
+        // /*
+        // TODO remove current lc from self.lc_map to save more memory space? but the rust compiler will stop this action i guess.
+        // */
+        // let map_len = self.lc_map.len();
+        // for i in 0..map_len{
+        //     let index = LcIndex(i);
+        //     let lc : LinearCombination<F>= self.lc_map.remove(&index).unwrap();
         //     let mut inlined_lc = LinearCombination::new();
-        //     num_coeff += lc.clone().len();
-        //     //println!("lc len {}", lc.clone().len());
         //     for &(coeff, var) in lc.iter() {
         //         if var.is_lc() {
-        //             num_lcs += 1;
         //             let lc_index = var.get_lc_index().expect("should be lc");
         //             // If `var` is a `SymbolicLc`, fetch the corresponding
         //             // inlined LC, and substitute it in.
         //             let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
-
-        //             let begin = Instant::now();
         //             let tmp = (lc * coeff).0.into_iter();
-        //             let end = Instant::now();
-        //             lc_mul_coeff_time += end.duration_since(begin);
-
-        //             let begin = Instant::now();
         //             inlined_lc.extend(tmp);
-        //             let end = Instant::now();
-        //             extend_time += end.duration_since(begin);
-
         //             num_times_used[lc_index.0] -= 1;
         //             if num_times_used[lc_index.0] == 0 {
         //                 // This lc is not used any more, so remove it.
-        //                 let begin = Instant::now();
-
         //                 inlined_lcs.remove(&lc_index);
-        //                 let end = Instant::now();
-        //                 remove_time += end.duration_since(begin);
         //             }
         //         } else {
         //             // Otherwise, it's a concrete variable and so we
         //             // substitute it in directly.
         //             inlined_lc.push((coeff, var));
-        //             num_concrete_variable += 1;
         //         }
-        //     }
-        //     let begin = Instant::now();
+        //     } 
         //     inlined_lc.compactify();
-        //     let end = Instant::now();
-        //     compactify_time += end.duration_since(begin);
-
-        //     let begin = Instant::now();
         //     inlined_lcs.insert(index, inlined_lc);
-        //     let end = Instant::now();
-        //     insert_time += end.duration_since(begin);
         // }
-        // println!(
-        //     " num lcs: {:?}   num_concrete_var: {:?}",
-        //     num_lcs, num_concrete_variable
-        // );
-        // println!(
-        //     "remove {:?} extend {:?}  compactify {:?}   insert {:?} lc_mul_coeff_time {:?}\n",
-        //     remove_time, extend_time, compactify_time, insert_time, lc_mul_coeff_time
-        // );
+        
+        
+        // // for (&index, lc) in &self.lc_map {
+        // //     let mut inlined_lc = LinearCombination::new();
+        // //     for &(coeff, var) in lc.iter() {
+        // //         if var.is_lc() {
+        // //             let lc_index = var.get_lc_index().expect("should be lc");
+        // //             // If `var` is a `SymbolicLc`, fetch the corresponding
+        // //             // inlined LC, and substitute it in.
+        // //             let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
+        // //             let tmp = (lc * coeff).0.into_iter();
+        // //             inlined_lc.extend(tmp);
+        // //             num_times_used[lc_index.0] -= 1;
+        // //             if num_times_used[lc_index.0] == 0 {
+        // //                 // This lc is not used any more, so remove it.
+        // //                 inlined_lcs.remove(&lc_index);
+        // //             }
+        // //         } else {
+        // //             // Otherwise, it's a concrete variable and so we
+        // //             // substitute it in directly.
+        // //             inlined_lc.push((coeff, var));
+        // //         }
+        // //     }
+        // //     inlined_lc.compactify();
+        // //     inlined_lcs.insert(index, inlined_lc);
+        // // }
 
+        // let sys = System::new();
+        // match sys.memory() {
+        //     Ok(mem) => println!("\nMemory: {} used / {}", saturating_sub_bytes(mem.total, mem.free), mem.total),
+        //     Err(x) => println!("\nMemory: error: {}", x)
+        // }
         // self.lc_map = inlined_lcs;
+        // println!("after inlining lcs, lcs map len is {}", self.lc_map.len());
+
+        let sys = System::new();
     }
 
     /// If a `SymbolicLc` is used in more than one location, this method makes a new
@@ -846,24 +850,25 @@ mod tests {
         let a = cs.new_input_variable(|| Ok(Fr::one()))?;
         let b = cs.new_witness_variable(|| Ok(Fr::one()))?;
         let c = cs.new_witness_variable(|| Ok(two))?;
-        cs.enforce_constraint(lc!() + a, lc!() + (two, b), lc!() + c)?;
+        cs.enforce_constraint(lc!() + a, lc!() + (two, b) + c, lc!() + c)?;
         let d = cs.new_lc(lc!() + a + b)?;
         cs.enforce_constraint(lc!() + a, lc!() + d, lc!() + d)?;
+
         let e = cs.new_lc(lc!() + d + d)?;
         cs.enforce_constraint(lc!() + Variable::One, lc!() + e, lc!() + e)?;
         cs.inline_all_lcs();
         let matrices = cs.to_matrices().unwrap();
         assert_eq!(matrices.a[0], vec![(Fr::one(), 1)]);
-        assert_eq!(matrices.b[0], vec![(two, 2)]);
+        assert_eq!(matrices.b[0], vec![(two, 2), (Fr::one(), 3)]);
         assert_eq!(matrices.c[0], vec![(Fr::one(), 3)]);
 
-        assert_eq!(matrices.a[1], vec![(Fr::one(), 1)]);
-        assert_eq!(matrices.b[1], vec![(Fr::one(), 1), (Fr::one(), 2)]);
-        assert_eq!(matrices.c[1], vec![(Fr::one(), 1), (Fr::one(), 2)]);
+        // assert_eq!(matrices.a[1], vec![(Fr::one(), 1)]);
+        // assert_eq!(matrices.b[1], vec![(Fr::one(), 1), (Fr::one(), 2)]);
+        // assert_eq!(matrices.c[1], vec![(Fr::one(), 1), (Fr::one(), 2)]);
 
-        assert_eq!(matrices.a[2], vec![(Fr::one(), 0)]);
-        assert_eq!(matrices.b[2], vec![(two, 1), (two, 2)]);
-        assert_eq!(matrices.c[2], vec![(two, 1), (two, 2)]);
+        // assert_eq!(matrices.a[2], vec![(Fr::one(), 0)]);
+        // assert_eq!(matrices.b[2], vec![(two, 1), (two, 2)]);
+        // assert_eq!(matrices.c[2], vec![(two, 1), (two, 2)]);
         Ok(())
     }
 }
