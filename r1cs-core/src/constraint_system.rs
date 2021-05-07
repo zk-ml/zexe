@@ -186,8 +186,35 @@ impl<F: Field> ConstraintSystem<F> {
     pub fn new_lc(&mut self, lc: LinearCombination<F>) -> Result<Variable, SynthesisError> {
         let index = LcIndex(self.num_linear_combinations);
         let var = Variable::SymbolicLc(index);
+        let mut inlined_lc = LinearCombination::new();
 
-        self.lc_map.insert(index, lc);
+        for &(coeff, var) in lc.iter() {
+            if var.is_lc() {
+                num_lcs += 1;
+                let lc_index = var.get_lc_index().expect("should be lc");
+                // If `var` is a `SymbolicLc`, fetch the corresponding
+                // inlined LC, and substitute it in.
+                let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
+
+                let tmp = (lc * coeff).0.into_iter();
+
+                inlined_lc.extend(tmp);
+
+                num_times_used[lc_index.0] -= 1;
+                if num_times_used[lc_index.0] == 0 {
+                    // This lc is not used any more, so remove it.
+
+                    inlined_lcs.remove(&lc_index);
+                }
+            } else {
+                // Otherwise, it's a concrete variable and so we
+                // substitute it in directly.
+                inlined_lc.push((coeff, var));
+            }
+        }
+        inlined_lc.compactify();
+
+        self.lc_map.insert(index, inlined_lc);
 
         self.num_linear_combinations += 1;
         Ok(var)
@@ -245,76 +272,77 @@ impl<F: Field> ConstraintSystem<F> {
     /// do not contribute to the size of the multi-scalar multiplication, which
     /// is the dominating cost.
     pub fn inline_all_lcs(&mut self) {
-        let mut inlined_lcs = BTreeMap::new();
-        let mut num_times_used = self.lc_num_times_used(false);
+        println!("do nothing here");
+        // let mut inlined_lcs = BTreeMap::new();
+        // let mut num_times_used = self.lc_num_times_used(false);
 
-        let mut remove_time = Duration::from_secs(0);
-        let mut compactify_time = Duration::from_secs(0);
-        let mut insert_time = Duration::from_secs(0);
-        let mut extend_time = Duration::from_secs(0);
-        let mut lc_mul_coeff_time = Duration::from_secs(0);
-        let mut num_coeff = 0;
-        let mut num_lcs = 0;
-        let mut num_concrete_variable = 0;
-        println!("lc_map len {}", self.lc_map.len());
-        for (&index, lc) in &self.lc_map {
-            let mut inlined_lc = LinearCombination::new();
-            num_coeff += lc.clone().len();
-            //println!("lc len {}", lc.clone().len());
-            for &(coeff, var) in lc.iter() {
-                if var.is_lc() {
-                    num_lcs += 1;
-                    let lc_index = var.get_lc_index().expect("should be lc");
-                    // If `var` is a `SymbolicLc`, fetch the corresponding
-                    // inlined LC, and substitute it in.
-                    let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
+        // let mut remove_time = Duration::from_secs(0);
+        // let mut compactify_time = Duration::from_secs(0);
+        // let mut insert_time = Duration::from_secs(0);
+        // let mut extend_time = Duration::from_secs(0);
+        // let mut lc_mul_coeff_time = Duration::from_secs(0);
+        // let mut num_coeff = 0;
+        // let mut num_lcs = 0;
+        // let mut num_concrete_variable = 0;
+        // println!("lc_map len {}", self.lc_map.len());
+        // for (&index, lc) in &self.lc_map {
+        //     let mut inlined_lc = LinearCombination::new();
+        //     num_coeff += lc.clone().len();
+        //     //println!("lc len {}", lc.clone().len());
+        //     for &(coeff, var) in lc.iter() {
+        //         if var.is_lc() {
+        //             num_lcs += 1;
+        //             let lc_index = var.get_lc_index().expect("should be lc");
+        //             // If `var` is a `SymbolicLc`, fetch the corresponding
+        //             // inlined LC, and substitute it in.
+        //             let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
 
-                    let begin = Instant::now();
-                    let tmp = (lc * coeff).0.into_iter();
-                    let end = Instant::now();
-                    lc_mul_coeff_time += end.duration_since(begin);
+        //             let begin = Instant::now();
+        //             let tmp = (lc * coeff).0.into_iter();
+        //             let end = Instant::now();
+        //             lc_mul_coeff_time += end.duration_since(begin);
 
-                    let begin = Instant::now();
-                    inlined_lc.extend(tmp);
-                    let end = Instant::now();
-                    extend_time += end.duration_since(begin);
+        //             let begin = Instant::now();
+        //             inlined_lc.extend(tmp);
+        //             let end = Instant::now();
+        //             extend_time += end.duration_since(begin);
 
-                    num_times_used[lc_index.0] -= 1;
-                    if num_times_used[lc_index.0] == 0 {
-                        // This lc is not used any more, so remove it.
-                        let begin = Instant::now();
+        //             num_times_used[lc_index.0] -= 1;
+        //             if num_times_used[lc_index.0] == 0 {
+        //                 // This lc is not used any more, so remove it.
+        //                 let begin = Instant::now();
 
-                        inlined_lcs.remove(&lc_index);
-                        let end = Instant::now();
-                        remove_time += end.duration_since(begin);
-                    }
-                } else {
-                    // Otherwise, it's a concrete variable and so we
-                    // substitute it in directly.
-                    inlined_lc.push((coeff, var));
-                    num_concrete_variable += 1;
-                }
-            }
-            let begin = Instant::now();
-            inlined_lc.compactify();
-            let end = Instant::now();
-            compactify_time += end.duration_since(begin);
+        //                 inlined_lcs.remove(&lc_index);
+        //                 let end = Instant::now();
+        //                 remove_time += end.duration_since(begin);
+        //             }
+        //         } else {
+        //             // Otherwise, it's a concrete variable and so we
+        //             // substitute it in directly.
+        //             inlined_lc.push((coeff, var));
+        //             num_concrete_variable += 1;
+        //         }
+        //     }
+        //     let begin = Instant::now();
+        //     inlined_lc.compactify();
+        //     let end = Instant::now();
+        //     compactify_time += end.duration_since(begin);
 
-            let begin = Instant::now();
-            inlined_lcs.insert(index, inlined_lc);
-            let end = Instant::now();
-            insert_time += end.duration_since(begin);
-        }
-        println!(
-            " num lcs: {:?}   num_concrete_var: {:?}",
-            num_lcs, num_concrete_variable
-        );
-        println!(
-            "remove {:?} extend {:?}  compactify {:?}   insert {:?} lc_mul_coeff_time {:?}\n",
-            remove_time, extend_time, compactify_time, insert_time, lc_mul_coeff_time
-        );
+        //     let begin = Instant::now();
+        //     inlined_lcs.insert(index, inlined_lc);
+        //     let end = Instant::now();
+        //     insert_time += end.duration_since(begin);
+        // }
+        // println!(
+        //     " num lcs: {:?}   num_concrete_var: {:?}",
+        //     num_lcs, num_concrete_variable
+        // );
+        // println!(
+        //     "remove {:?} extend {:?}  compactify {:?}   insert {:?} lc_mul_coeff_time {:?}\n",
+        //     remove_time, extend_time, compactify_time, insert_time, lc_mul_coeff_time
+        // );
 
-        self.lc_map = inlined_lcs;
+        // self.lc_map = inlined_lcs;
     }
 
     /// If a `SymbolicLc` is used in more than one location, this method makes a new
