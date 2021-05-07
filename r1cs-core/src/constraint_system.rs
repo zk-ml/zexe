@@ -186,14 +186,13 @@ impl<F: Field> ConstraintSystem<F> {
         let index = LcIndex(self.num_linear_combinations);
         let var = Variable::SymbolicLc(index);
         let mut inlined_lc = LinearCombination::new();
-
+        let (mut num_times_used, inDegree) = self.lc_num_times_used(false);
         for &(coeff, var) in lc.iter() {
             if var.is_lc() {
-                num_lcs += 1;
                 let lc_index = var.get_lc_index().expect("should be lc");
                 // If `var` is a `SymbolicLc`, fetch the corresponding
                 // inlined LC, and substitute it in.
-                let lc = inlined_lcs.get(&lc_index).expect("should be inlined");
+                let lc = self.lc_map.get(&lc_index).expect("should be inlined");
 
                 let tmp = (lc * coeff).0.into_iter();
 
@@ -203,7 +202,7 @@ impl<F: Field> ConstraintSystem<F> {
                 if num_times_used[lc_index.0] == 0 {
                     // This lc is not used any more, so remove it.
 
-                    inlined_lcs.remove(&lc_index);
+                    self.lc_map.remove(&lc_index);
                 }
             } else {
                 // Otherwise, it's a concrete variable and so we
