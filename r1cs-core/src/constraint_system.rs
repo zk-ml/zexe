@@ -6,8 +6,8 @@ use crate::{
 };
 use algebra_core::Field;
 use core::cell::{Ref, RefCell, RefMut};
-use core::time::Duration;
-use std::time::Instant;
+// use core::time::Duration;
+// use std::time::Instant;
 use systemstat::*;
 
 /// Computations are expressed in terms of rank-1 constraint systems (R1CS).
@@ -248,7 +248,7 @@ impl<F: Field> ConstraintSystem<F> {
     /// is the dominating cost.
     pub fn inline_all_lcs(&mut self) {
         let mut inlined_lcs = BTreeMap::new();
-        let (mut num_times_used, inDegree) = self.lc_num_times_used(false);
+        let mut num_times_used = self.lc_num_times_used(false);
         //println!("num times used {:?}", num_times_used.clone());
         //TODO a concurrent queue to store LCs to be inlined in topological order.
         //TODO a worker abstraction to pull LCs from queue 
